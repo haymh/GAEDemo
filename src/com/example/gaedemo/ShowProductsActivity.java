@@ -3,29 +3,46 @@ package com.example.gaedemo;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.app.Activity;
+import android.app.ListActivity;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-public class ShowProductsActivity extends Activity {
+public class ShowProductsActivity extends ListActivity {
 	protected static final String TAG = "ShowProductsActivity";
-	private TextView content;
 	ProgressDialog dialog;
+	
+	private ArrayList<JSONDetail> list;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.showitem);
-		content = (TextView)findViewById(R.id.content);
+		setContentView(R.layout.display_list);
+		
 		dialog = ProgressDialog.show(this, "Loading product data...", "Please wait...", false);
 
 		dialog.show();
@@ -64,11 +81,47 @@ public class ShowProductsActivity extends Activity {
 		}
 
 		protected void onPostExecute(String result) {
-			content.setText(result);
+			list = new ArrayList<JSONDetail>(new JSONParser(result).getDetailsArray());
+			setAdapter(list);
+			
 			dialog.dismiss();
-
 		}
+	}
+	
+	private void setAdapter(ArrayList<JSONDetail> list) {
+		setListAdapter(new Adapter(ShowProductsActivity.this, R.layout.display_object, list));
+	}
+		
+	public class Adapter extends ArrayAdapter<JSONDetail> {
+		
+		public Adapter(Context context, int textResource, List<JSONDetail> objects) {
+			super(context, textResource, objects);
+		}
+		
+		@Override
+		public View getView(int position, View convertView, ViewGroup parent) {
+			View v = convertView;
+			
+			if(v == null) {
+				LayoutInflater inflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+				v = inflater.inflate(R.layout.display_object, null);
+			}
 
-
+			JSONDetail item = getItem(position);
+			
+			if(item != null) {
+				
+				TextView name = (TextView) v.findViewById(R.id.objectName);
+				TextView description = (TextView) v.findViewById(R.id.objectDescription);
+				TextView product = (TextView) v.findViewById(R.id.objectProduct);
+				TextView price = (TextView) v.findViewById(R.id.objectPrice);
+				
+				name.setText(item.getName());
+				description.setText("DESCRIPTION: " + item.getDescription());
+				product.setVisibility(View.GONE);
+				price.setVisibility(View.GONE);
+			}
+			return v;
+		}
 	}
 }
